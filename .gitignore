@@ -1,0 +1,45 @@
+# ===========================================
+# Python / FastAPI project .gitignore
+# ===========================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+.env.*
+
+# VSCode settings and caches
+.vscode/
+.history/
+
+# Pytest / coverage / mypy
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.cache/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Docker / Compose
+docker-compose.override.yml
+.env.docker
