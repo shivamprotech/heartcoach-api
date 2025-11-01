@@ -1,14 +1,22 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
 from app.core.config import settings
 
-DATABASE_URL = settings.DATABASE_URL
+# ✅ Use asyncpg in connection URL
+DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-engine = create_async_engine(DATABASE_URL, echo=True)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# ✅ Create async engine
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
+# ✅ Create async session
+async_session = sessionmaker(
+    bind=engine,
+    expire_on_commit=False,
+    class_=AsyncSession
+)
 
-# Dependency
+# ✅ Dependency for FastAPI routes
 async def get_db():
-    async with AsyncSessionLocal() as session:
+    async with async_session() as session:
         yield session
