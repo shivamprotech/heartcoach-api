@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: heartcoach-api
+    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - mailhog
+      - redis    # ✅ Added Redis dependency
+    env_file:
+      - .env
+    networks:
+      - heartcoach-network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP port
+      - "8025:8025"   # Web UI
+    networks:
+      - heartcoach-network
+
+  db:
+    image: postgres:16
+    container_name: heartcoach-db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - heartcoach-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: heartcoach-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - heartcoach-network
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: heartcoach-redis-ui
+    ports:
+      - "5540:5540"
+    networks:
+      - heartcoach-network
+
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  heartcoach-network:
+    driver: bridge

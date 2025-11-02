@@ -55,6 +55,7 @@ prompt_toolkit==3.0.52
 pyasn1==0.6.1
 pycodestyle==2.14.0
 pycparser==2.23
+pyotp
 pydantic==2.12.3
 pydantic-settings==2.11.0
 pydantic_core==2.41.4
@@ -90,3 +91,9 @@ wcwidth==0.2.14
 websockets==15.0.1
 xxhash==3.6.0
 zstandard==0.25.0
+asyncpg
+redis>=4.5.0
+anyio
+sendgrid
+twilio
+pydantic[email]

@@ -1,24 +1,60 @@
-# app/schemas/user.py
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 
-class UserCreate(BaseModel):
-    email: str
-    password: str
-    full_name: Optional[str]
+class UserBase(BaseModel):
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
 
 
-class UserRead(BaseModel):
+class UserCreate(UserBase):
+    """Used when creating user after first OTP verification."""
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+
+
+class UserInfoBase(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    blood_group: Optional[str] = None
+    age: Optional[int] = None
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    pincode: Optional[str] = None
+
+# class UserInfoResponse(BaseModel):
+#     first_name: str = None
+#     last_name: str = None
+#     blood_group: str = None
+#     age: int = None
+#     height: float = None
+#     weight: float = None
+#     city: str = None
+#     country: str = None
+#     pincode: str = None
+#     is_active: bool = True
+
+
+class UserInfoCreate(UserInfoBase):
+    pass
+
+
+class UserInfoResponse(UserInfoBase):
     id: int
-    email: str
-    full_name: Optional[str]
-    is_active: bool
+    user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class UserRead(UserBase):
+    id: int
+
+    class Config:
+        from_attributes = True
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str]
-    is_active: Optional[bool]
+    full_name: Optional[str] = None
