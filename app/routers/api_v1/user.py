@@ -16,7 +16,7 @@ async def get_user_service(db: AsyncSession = Depends(get_db)) -> UserInfoServic
 
 
 @router.post("/{user_id}/create-profile", response_model=UserInfoResponse, status_code=status.HTTP_201_CREATED)
-async def create_profile(user_id: int,
+async def create_profile(user_id: str,
                          user_info: UserInfoCreate,
                          user_svc: UserInfoService = Depends(get_user_service)):
     """ 

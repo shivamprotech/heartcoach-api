@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
@@ -42,8 +43,8 @@ class UserInfoCreate(UserInfoBase):
 
 
 class UserInfoResponse(UserInfoBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
 
     class Config:
         from_attributes = True

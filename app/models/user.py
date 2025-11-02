@@ -1,12 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
+import uuid
+from sqlalchemy import UUID, Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id: int = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email: str = Column(String, unique=True, index=True)
     phone_number: str = Column(String, unique=True, index=True)
     # Relationship to UserInfo
@@ -16,8 +18,8 @@ class User(Base):
 class UserInfo(Base):
     __tablename__ = "users_info"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     first_name: str | None = Column(String)
     last_name: str | None = Column(String)
