@@ -97,3 +97,5 @@ anyio
 sendgrid
 twilio
 pydantic[email]
+psycopg2-binary
+pyotp

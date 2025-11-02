@@ -4,7 +4,7 @@ services:
   api:
     build: .
     container_name: heartcoach-api
-    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - .:/app
     ports:
@@ -12,7 +12,7 @@ services:
     depends_on:
       - db
       - mailhog
-      - redis    # ✅ Added Redis dependency
+      - redis
     env_file:
       - .env
     networks:

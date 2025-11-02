@@ -59,3 +59,13 @@ class UserRead(UserBase):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    email: Optional[str]
+    phone_number: Optional[str]
+    info: Optional[UserInfoBase]
+
+    class Config:
+        orm_mode = True

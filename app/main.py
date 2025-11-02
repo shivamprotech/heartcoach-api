@@ -17,6 +17,7 @@ def create_app() -> FastAPI:
         """Global middleware to check JWT Bearer tokens."""
         # Public (unauthenticated) routes
         public_paths = [
+            "/api/v1/auth/health",
             "/api/v1/auth/request-otp",
             "/api/v1/auth/verify-otp",
             "/docs",

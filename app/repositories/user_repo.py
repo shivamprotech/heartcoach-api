@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.models.user import User, UserInfo
 from typing import Optional, Tuple
 from app.schemas.user import UserCreate, UserInfoCreate
+from sqlalchemy.orm import selectinload
 
 
 class UserRepository:
@@ -17,6 +18,15 @@ class UserRepository:
 
     async def get_by_phone(self, phone: str) -> Optional[User]:
         q = select(User).where(User.phone_number == phone)
+        result = await self.session.execute(q)
+        return result.scalars().first()
+
+    async def get_user_with_info(self, user_id: str):
+        q = (
+            select(User)
+            .options(selectinload(User.info))
+            .where(User.id == user_id)
+        )
         result = await self.session.execute(q)
         return result.scalars().first()
 
