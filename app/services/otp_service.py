@@ -2,6 +2,7 @@
 import secrets
 import string
 import time
+import pyotp
 from typing import Optional
 
 from app.core.config import settings
@@ -10,7 +11,7 @@ from app.services.senders.phone_sender import PhoneSender
 from redis.asyncio import Redis  # uses redis-py v4+ asyncio support
 
 OTP_LENGTH = 6
-OTP_EXPIRES_SECONDS = 3000  # 5 minutes
+OTP_EXPIRES_SECONDS = 18000  # 5 minutes
 OTP_PREFIX = "heartcoach:otp:"
 
 
@@ -35,9 +36,16 @@ class OTPService:
     def _otp_key(self, contact: str) -> str:
         return f"{OTP_PREFIX}{contact}"
 
-    def _generate_otp(self) -> str:
-        # Use `secrets` for cryptographic randomness
-        return "".join(secrets.choice(string.digits) for _ in range(OTP_LENGTH))
+    async def generate_otp(self, contact: str):
+        # Create a unique secret per contact
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret, interval=settings.OTP_VALIDITY_MINUTES * 60)
+        otp = totp.now()
+
+        # Store secret in Redis for later verification
+        await self.redis.setex(f"otp_secret:{contact}", settings.OTP_VALIDITY_MINUTES * 60, secret)
+
+        return otp
 
     async def store_otp(self, contact: str, otp: str) -> None:
         key = self._otp_key(contact)
@@ -68,34 +76,56 @@ class OTPService:
         else:
             self._mem_store.pop(contact, None)
 
+    async def _generate_secret_and_otp(self, contact: str):
+        """Generate new secret and OTP for a contact."""
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret, interval=OTP_EXPIRES_SECONDS)
+        otp = totp.now()
+        await self.redis.setex(f"otp_secret:{contact}", OTP_EXPIRES_SECONDS, secret)
+        return otp
+
     async def generate_and_send(self, contact: str) -> bool:
-        """
-        Generate OTP, store in Redis (or memory), and send via appropriate channel.
-        Returns True if send attempt was initiated successfully.
-        """
-        otp = self._generate_otp()
-        await self.store_otp(contact, otp)
+        """Generate new OTP and send."""
+        otp = await self._generate_secret_and_otp(contact)
+        return await self._send(contact, otp)
 
-        body = f"Your OTP is {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
+    async def fetch_and_send(self, contact: str) -> bool:
+        """
+        Fetch existing OTP if still valid, else generate a new one, then send it.
+        """
+        secret = await self.redis.get(f"otp_secret:{contact}")
+        if secret:
+            if isinstance(secret, bytes):
+                secret = secret.decode()
+            # Existing valid secret → regenerate same OTP
+            totp = pyotp.TOTP(secret, interval=OTP_EXPIRES_SECONDS)
+            otp = totp.now()
+        else:
+            # No secret → generate new one
+            otp = await self._generate_secret_and_otp(contact)
 
-        # If email, call email sender. The email_sender.send_email is async.
+        # Send the same (or new) OTP
+        return await self._send(contact, otp, True)
+
+    async def _send(self, contact: str, otp: str, resend: bool = False) -> bool:
+        """Send OTP via appropriate channel."""
+        if resend:
+            body = f"Your OTP has been resend {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
+        else:
+            body = f"Your OTP is {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
         if "@" in contact:
             subject = "Your HeartCoach Verification Code"
-            # send_email might be synchronous under the hood; EmailSender handles async wrapping.
-            sent = await self.email_sender.send_email(to_email=contact, subject=subject, body=body)
-            return bool(sent)
+            return await self.email_sender.send_email(to_email=contact, subject=subject, body=body)
         else:
-            sent = await self.phone_sender.send_phone(to_phone=contact, body=body)
-
-        # TODO: if contact is phone, call sms/whatsapp senders and return their status
-        # For now, return True (we generated and stored OTP)
-        return True
+            return await self.phone_sender.send_phone(to_phone=contact, body=body)
 
     async def verify(self, contact: str, otp: str) -> bool:
-        stored = await self.get_otp(contact)
-        if not stored:
+        """
+        Verify a given OTP using the stored secret.
+        """
+        secret = await self.redis.get(f"otp_secret:{contact}")
+        if not secret:
             return False
-        if secrets.compare_digest(stored, otp):
-            await self.delete_otp(contact)
-            return True
-        return False
+
+        totp = pyotp.TOTP(secret.decode(), interval=OTP_EXPIRES_SECONDS)
+        return totp.verify(otp)

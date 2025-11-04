@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.db.session import get_db
 from app.repositories.user_repo import UserRepository
+from app.schemas.otp import ResendOtpRequest
 from app.services.otp_service import OTPService
 from app.services.auth_service import AuthService
 from app.core.config import settings
@@ -70,3 +71,18 @@ async def verify_otp(
     # Issue JWT token using AuthService
     token = auth_svc.create_access_token(subject=str(user.id))
     return TokenResponse(access_token=token)
+
+
+@router.post("/resend-otp")
+async def resend_otp(payload: ResendOtpRequest, otp_service: OTPService = Depends(get_otp_service)):
+    if not payload.email and not payload.phone_number:
+        raise HTTPException(status_code=400, detail="Either email or phone number is required")
+
+    try:
+        success = await otp_service.fetch_and_send(payload.email or payload.phone_number)
+        if success:
+            return {"message": "OTP resent successfully"}
+        else:
+            raise HTTPException(status_code=400, detail="Failed to resend OTP")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resending OTP: {str(e)}")

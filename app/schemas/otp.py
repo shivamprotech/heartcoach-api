@@ -14,3 +14,8 @@ class VerifyOTPIn(BaseModel):
 
 class OTPResponse(BaseModel):
     message: str
+
+
+class ResendOtpRequest(BaseModel):
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None

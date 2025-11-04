@@ -16,7 +16,6 @@ async def get_user_service(db: AsyncSession = Depends(get_db)) -> UserInfoServic
     return UserInfoService(repo)
 
 
-
 @router.get("/me", response_model=UserResponse)
 async def get_me(request: Request, db: AsyncSession = Depends(get_db)):
     """Return current user info using JWT token"""

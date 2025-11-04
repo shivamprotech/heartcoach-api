@@ -30,6 +30,8 @@ class Settings(BaseSettings):
 
     REDIS_URL: str | None = "redis://redis:6379/0"
 
+    OTP_VALIDITY_MINUTES: int = os.getenv("OTP_VALIDITY_MINUTES", 5)
+
     class Config:
         env_file = ".env"
         case_sensitive = True
