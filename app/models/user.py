@@ -14,6 +14,9 @@ class User(Base):
     # Relationship to UserInfo
     info = relationship("UserInfo", back_populates="user", uselist=False, cascade="all, delete-orphan")
     vitals = relationship("UserVital", back_populates="user", cascade="all, delete-orphan")
+    medicines = relationship("Medicine", back_populates="user", cascade="all, delete-orphan")
+    water_goals = relationship("WaterGoal", back_populates="user", cascade="all, delete-orphan")
+    water_intake = relationship("WaterIntake", back_populates="user", cascade="all, delete-orphan")
 
 
 class UserInfo(Base):

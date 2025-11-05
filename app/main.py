@@ -4,7 +4,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt, JWTError
 from app.core.config import settings
-from app.routers.api_v1 import auth, health, user, vitals
+from app.routers.api_v1 import auth, health, user, vitals, medicine, water
 
 
 def create_app() -> FastAPI:
@@ -89,6 +89,8 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(user.router, prefix="/api/v1")
     app.include_router(vitals.router, prefix="/api/v1")
+    app.include_router(medicine.router, prefix="/api/v1")
+    app.include_router(water.router, prefix="/api/v1")
 
     return app
 
