@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.models.vitals import UserVital
+from app.models.vital import UserVital
 
 
 class VitalRepository:

@@ -1,4 +1,4 @@
-from app.repositories.vitals_repo import VitalRepository
+from app.repositories.vital_repo import VitalRepository
 
 
 class VitalService:

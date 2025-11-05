@@ -7,9 +7,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.models.vitals import UserVital
-from app.schemas.vitals import VitalCreate, VitalResponse, VitalUpdate
-from app.services.vitals_service import VitalService
+from app.models.vital import UserVital
+from app.schemas.vital import VitalCreate, VitalResponse, VitalUpdate
+from app.services.vital_service import VitalService
 import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO

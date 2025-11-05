@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 
-
 class Settings(BaseSettings):
     APP_NAME: str = "HeartCoach"
     ENV: str = "development"
@@ -17,12 +16,12 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = os.getenv("POSTGRES_DB")
     PYTHONUNBUFFERED: int
 
-    EMAIL_HOST: str = "mailhog" if os.getenv("EMAIL_PROVIDER") == "mailhog" else os.getenv("EMAIL_HOST")
-    EMAIL_PORT: int = 1025 if os.getenv("EMAIL_PROVIDER") == "mailhog" else os.getenv("EMAIL_PORT")
+    EMAIL_HOST: str = os.getenv("EMAIL_HOST")
+    EMAIL_PORT: int = os.getenv("EMAIL_PORT")
     EMAIL_USER: str
     EMAIL_PASSWORD: str
     EMAIL_FROM: str
-    EMAIL_PROVIDER: str = "mailhog" if os.getenv("EMAIL_PROVIDER") == "mailhog" else os.getenv("EMAIL_PROVIDER")
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER")
 
     PHONE_FROM: str = os.getenv("PHONE_FROM")
     TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID")

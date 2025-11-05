@@ -1,13 +1,27 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt, JWTError
 from app.core.config import settings
-from app.routers.api_v1 import auth, health, user, vitals, medicine, water
+from app.routers.api_v1 import auth, health, user, vital, medicine, water
+from app.core.logging import setup_logger
 
 
 def create_app() -> FastAPI:
+    logger = setup_logger()
+
+    # Lifespan context manager replaces on_event startup/shutdown
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Startup
+        logger.info("HeartCoach API starting up...")
+        yield
+        # Shutdown
+        logger.info("HeartCoach API shutting down...")
+
     app = FastAPI(title=settings.APP_NAME)
 
     app.add_middleware(
@@ -17,6 +31,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.on_event("startup")
+    async def startup_event():
+        logger.info("HeartCoach API starting up...")
 
     # -----------------------------------------------------
     # 🧩 JWT Auth Middleware
@@ -88,7 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(user.router, prefix="/api/v1")
-    app.include_router(vitals.router, prefix="/api/v1")
+    app.include_router(vital.router, prefix="/api/v1")
     app.include_router(medicine.router, prefix="/api/v1")
     app.include_router(water.router, prefix="/api/v1")
 

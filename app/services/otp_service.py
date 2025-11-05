@@ -1,18 +1,17 @@
-# app/services/otp_service.py
-import secrets
-import string
 import time
+from app.core.logging import setup_logger
 import pyotp
 from typing import Optional
 
 from app.core.config import settings
 from app.services.senders.email_sender import EmailSender  # new/updated sender below
 from app.services.senders.phone_sender import PhoneSender
-from redis.asyncio import Redis  # uses redis-py v4+ asyncio support
+from redis.asyncio import Redis
 
 OTP_LENGTH = 6
-OTP_EXPIRES_SECONDS = 18000  # 5 minutes
+OTP_EXPIRES_SECONDS = 18000
 OTP_PREFIX = "heartcoach:otp:"
+logger = setup_logger()
 
 
 class OTPService:
@@ -76,18 +75,94 @@ class OTPService:
         else:
             self._mem_store.pop(contact, None)
 
+    async def _send(self, contact: str, otp: str, resend: bool = False) -> bool:
+        """
+        Send the OTP to the given contact via the appropriate channel (email or SMS).
+
+        :param contact: The user's contact information (email or phone number).
+        :type contact: str
+        :param otp: The One-Time Password to send.
+        :type otp: str
+        :param resend: Whether this OTP is being resent (default is False).
+        :type resend: bool
+        :return: True if the OTP was sent successfully, False otherwise.
+        :rtype: bool
+        """
+        try:
+            # Prepare the message body based on whether the OTP is a resend or first-time
+            if resend:
+                body = f"Your OTP has been resent: {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
+            else:
+                body = f"Your OTP is: {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
+
+            logger.info(f"Preparing to send OTP to contact: {contact}")
+
+            # Determine the channel: email if the contact contains '@', else SMS
+            if "@" in contact:
+                subject = "Your HeartCoach Verification Code"
+                logger.info(f"Sending OTP via email to {contact}")
+                result = await self.email_sender.send_email(to_email=contact, subject=subject, body=body)
+            else:
+                logger.info(f"Sending OTP via SMS to {contact}")
+                result = await self.phone_sender.send_phone(to_phone=contact, body=body)
+
+            # Log the result
+            if result:
+                logger.info(f"OTP successfully sent to {contact}")
+            else:
+                logger.error(f"Failed to send OTP to {contact}")
+
+            return result
+
+        except Exception as e:
+            logger.exception(f"Exception occurred while sending OTP to {contact}: {e}")
+            return False
+
     async def _generate_secret_and_otp(self, contact: str):
-        """Generate new secret and OTP for a contact."""
+        """
+        Generate a new OTP (One-Time Password) and store the secret in Redis.
+
+        :param contact: The user's contact information (email or phone number) 
+                        for which the OTP is being generated.
+        :type contact: str
+        :return: The generated OTP as a string.
+        :rtype: str
+        :raises Exception: If storing the secret in Redis fails or any other error occurs
+                            during OTP generation.
+        """
+        logger.info(f"Generating OTP for contact: {contact}")
         secret = pyotp.random_base32()
         totp = pyotp.TOTP(secret, interval=OTP_EXPIRES_SECONDS)
         otp = totp.now()
+
         await self.redis.setex(f"otp_secret:{contact}", OTP_EXPIRES_SECONDS, secret)
+        logger.debug(f"OTP generated for {contact} (secret stored in Redis)")
+
         return otp
 
     async def generate_and_send(self, contact: str) -> bool:
-        """Generate new OTP and send."""
-        otp = await self._generate_secret_and_otp(contact)
-        return await self._send(contact, otp)
+        """
+        Generate a new OTP for the given contact and send it.
+
+        :param contact: The user's contact information (email or phone number) to which the OTP will be sent.
+        :type contact: str
+        :return: True if OTP was successfully sent, False otherwise.
+        :rtype: bool
+        :raises Exception: If OTP generation or sending fails.
+        """
+        try:
+            otp = await self._generate_secret_and_otp(contact)
+            logger.info(f"Sending OTP to contact: {contact}")
+
+            result = await self._send(contact, otp)  # your actual send logic
+            if result:
+                logger.info(f"OTP successfully sent to {contact}")
+            else:
+                logger.error(f"Failed to send OTP to {contact}")
+            return result
+        except Exception as e:
+            logger.exception(f"Exception while generating or sending OTP for {contact}: {e}")
+            return False
 
     async def fetch_and_send(self, contact: str) -> bool:
         """
@@ -106,18 +181,6 @@ class OTPService:
 
         # Send the same (or new) OTP
         return await self._send(contact, otp, True)
-
-    async def _send(self, contact: str, otp: str, resend: bool = False) -> bool:
-        """Send OTP via appropriate channel."""
-        if resend:
-            body = f"Your OTP has been resend {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
-        else:
-            body = f"Your OTP is {otp}. It will expire in {OTP_EXPIRES_SECONDS // 60} minutes."
-        if "@" in contact:
-            subject = "Your HeartCoach Verification Code"
-            return await self.email_sender.send_email(to_email=contact, subject=subject, body=body)
-        else:
-            return await self.phone_sender.send_phone(to_phone=contact, body=body)
 
     async def verify(self, contact: str, otp: str) -> bool:
         """

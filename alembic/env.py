@@ -29,7 +29,7 @@ if config.config_file_name is not None:
 
 # Import models after sys.path fix
 from app.db.base import Base
-from app.models import user, vitals, medicine, water
+from app.models import user, vital, medicine, water
 
 target_metadata = Base.metadata
 

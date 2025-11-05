@@ -3,14 +3,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
+from app.core.logging import setup_logger
 from app.db.session import get_db
 from app.repositories.user_repo import UserRepository
+from app.core.deps import get_otp_service
 from app.schemas.otp import ResendOtpRequest
 from app.services.otp_service import OTPService
 from app.services.auth_service import AuthService
-from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+logger = setup_logger()
 
 
 class RequestOTPIn(BaseModel):
@@ -27,11 +30,6 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-async def get_otp_service() -> OTPService:
-    # could accept injected redis client in future
-    return OTPService()
-
-
 async def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     repo = UserRepository(db)
     return AuthService(repo)
@@ -42,6 +40,7 @@ async def request_otp(payload: RequestOTPIn, otp_service: OTPService = Depends(g
     """
     Generate and send OTP to contact (email or phone).
     """
+    logger.info(f"Requesting OTP for contact: {payload.contact}")
     ok = await otp_service.generate_and_send(payload.contact)
     if not ok:
         raise HTTPException(status_code=500, detail="Failed to send OTP")

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import UUID, Column, Integer, String, Boolean, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
@@ -11,7 +11,8 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email: str = Column(String, unique=True, index=True)
     phone_number: str = Column(String, unique=True, index=True)
-    # Relationship to UserInfo
+    
+    # Relationship
     info = relationship("UserInfo", back_populates="user", uselist=False, cascade="all, delete-orphan")
     vitals = relationship("UserVital", back_populates="user", cascade="all, delete-orphan")
     medicines = relationship("Medicine", back_populates="user", cascade="all, delete-orphan")
@@ -35,5 +36,6 @@ class UserInfo(Base):
     country: str | None = Column(String)
     pincode: str | None = Column(String)
     is_active: bool = Column(Boolean, default=True)
+
     # Back-reference to User
     user = relationship("User", back_populates="info")
