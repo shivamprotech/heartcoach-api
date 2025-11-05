@@ -13,6 +13,7 @@ class User(Base):
     phone_number: str = Column(String, unique=True, index=True)
     # Relationship to UserInfo
     info = relationship("UserInfo", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    vitals = relationship("UserVital", back_populates="user", cascade="all, delete-orphan")
 
 
 class UserInfo(Base):

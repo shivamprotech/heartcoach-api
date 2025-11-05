@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     EMAIL_USER: str
     EMAIL_PASSWORD: str
     EMAIL_FROM: str
-    EMAIL_PROVIDER: str
+    EMAIL_PROVIDER: str = "mailhog" if os.getenv("EMAIL_PROVIDER") == "mailhog" else os.getenv("EMAIL_PROVIDER")
 
     PHONE_FROM: str = os.getenv("PHONE_FROM")
     TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID")

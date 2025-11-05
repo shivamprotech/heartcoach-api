@@ -127,5 +127,8 @@ class OTPService:
         if not secret:
             return False
 
-        totp = pyotp.TOTP(secret.decode(), interval=OTP_EXPIRES_SECONDS)
+        if isinstance(secret, bytes):
+            secret = secret.decode()
+
+        totp = pyotp.TOTP(secret, interval=OTP_EXPIRES_SECONDS)
         return totp.verify(otp)

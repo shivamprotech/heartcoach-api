@@ -99,3 +99,6 @@ twilio
 pydantic[email]
 psycopg2-binary
 pyotp
+matplotlib
+pillow
+pandas
