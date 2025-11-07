@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from jose import jwt, JWTError
 from app.core.config import settings
 from app.routers.api_v1 import auth, health, user, vital, medicine, water
@@ -23,6 +25,11 @@ def create_app() -> FastAPI:
         logger.info("HeartCoach API shutting down...")
 
     app = FastAPI(title=settings.APP_NAME)
+
+    # Create static directory if not exists
+    os.makedirs("static/uploads", exist_ok=True)
+
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
     app.add_middleware(
         CORSMiddleware,

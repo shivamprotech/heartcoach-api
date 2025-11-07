@@ -1,24 +1,41 @@
-# app/services/auth_service.py
-from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 from app.core.config import settings
-from app.repositories.user_repo import UserRepository
+from app.core.logging import setup_logger
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+logger = setup_logger()
 
 
 class AuthService:
-    def __init__(self, user_repo: UserRepository):
-        self.user_repo = user_repo
+    def __init__(self):
+        pass
 
-    def verify_password(self, plain, hashed):
-        return pwd_context.verify(plain, hashed)
+    def create_access_token(self, subject: str, expires_delta: timedelta = None) -> str:
+        """
+        Create a JWT access token for a given subject (usually user ID).
 
-    def hash_password(self, pw: str) -> str:
-        return pwd_context.hash(pw)
+        :param subject: Identifier for the token owner (e.g., user ID)
+        :type subject: str
+        :param expires_delta: Optional timedelta for token expiration
+        :type expires_delta: timedelta, optional
+        :return: Encoded JWT token string
+        :rtype: str
+        """
+        try:
+            # Determine expiration time
+            expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+            payload = {
+                "exp": expire,
+                "sub": str(subject)
+            }
 
-    def create_access_token(self, subject: str, expires_delta: timedelta = None):
-        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-        to_encode = {"exp": expire, "sub": str(subject)}
-        return jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
+            # Log token creation
+            logger.info(f"Creating JWT access token for subject: {subject}, expires at {expire.isoformat()}")
+
+            # Encode JWT token
+            token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+            return token
+
+        except Exception as e:
+            logger.exception(f"Failed to create access token for subject: {subject}: {e}")
+            raise

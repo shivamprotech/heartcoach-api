@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def setup_logger(name: str = "heartcoach") -> logging.Logger:
+def setup_logger(name: str = "Heartcoach") -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 

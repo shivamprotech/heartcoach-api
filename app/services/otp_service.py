@@ -185,13 +185,39 @@ class OTPService:
     async def verify(self, contact: str, otp: str) -> bool:
         """
         Verify a given OTP using the stored secret.
+
+        Steps:
+        1. Retrieve the secret for the contact from Redis.
+        2. If no secret is found, the OTP has expired or was never generated.
+        3. Decode the secret if stored as bytes.
+        4. Use pyotp.TOTP to verify the provided OTP against the secret.
+
+        :param contact: Email or phone number associated with the OTP
+        :type contact: str
+        :param otp: OTP provided by the user for verification
+        :type otp: str
+        :return: True if OTP is valid, False otherwise
+        :rtype: bool
         """
+        logger.info(f"Verifying OTP for contact: {contact}")
+
+        # Step 1: Retrieve secret from Redis
         secret = await self.redis.get(f"otp_secret:{contact}")
         if not secret:
+            logger.warning(f"No OTP secret found for contact: {contact} (expired or not generated)")
             return False
 
+        # Step 2: Decode secret if stored as bytes
         if isinstance(secret, bytes):
             secret = secret.decode()
 
+        # Step 3: Verify OTP using pyotp
         totp = pyotp.TOTP(secret, interval=OTP_EXPIRES_SECONDS)
-        return totp.verify(otp)
+        valid = totp.verify(otp)
+
+        if valid:
+            logger.info(f"OTP verified successfully for contact: {contact}")
+        else:
+            logger.warning(f"OTP verification failed for contact: {contact}")
+
+        return valid
