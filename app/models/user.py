@@ -6,6 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
 from sqlalchemy import Enum as SQLAlchemyEnum
 
+from app.models.common import TimestampMixin
+
 
 class BloodGroupEnum(str, Enum):
     A_POS = "A+"
@@ -27,7 +29,7 @@ class UserRoleEnum(str, Enum):
     GUEST = "Guest"
 
 
-class User(Base):
+class User(Base, TimestampMixin):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
@@ -40,9 +42,14 @@ class User(Base):
     medicines = relationship("Medicine", back_populates="user", cascade="all, delete-orphan")
     water_goals = relationship("WaterGoal", back_populates="user", cascade="all, delete-orphan")
     water_intake = relationship("WaterIntake", back_populates="user", cascade="all, delete-orphan")
+    daily_intakes = relationship(
+            "DailyMedicineIntake",
+            back_populates="user",
+            cascade="all, delete-orphan",
+        )
 
 
-class UserInfo(Base):
+class UserInfo(Base, TimestampMixin):
     """
     Represents detailed profile information for a user.
     Each user can have one UserInfo record containing personal and health-related details.

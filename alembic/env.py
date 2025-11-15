@@ -2,7 +2,7 @@ import os
 import sys
 from logging.config import fileConfig
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, orm
 from dotenv import load_dotenv
 
 # Ensure app is importable
@@ -30,6 +30,8 @@ if config.config_file_name is not None:
 # Import models after sys.path fix
 from app.db.base import Base
 from app.models import user, vital, medicine, water
+
+orm.configure_mappers()
 
 target_metadata = Base.metadata
 

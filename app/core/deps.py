@@ -3,12 +3,15 @@
 from fastapi import Depends, HTTPException, Request, status
 from app.core.logging import setup_logger
 from app.db.session import get_db
+from app.repositories.medicine_repo import MedicineRepository
 from app.repositories.user_info_repo import UserInfoRepository
 from app.repositories.user_repo import UserRepository
+from app.services.medicine_service import MedicineService
 from app.services.otp_service import OTPService
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.services.user_service import UserInfoService
+from app.core.context import current_user_id
+
 
 logger = setup_logger()
 
@@ -20,6 +23,15 @@ async def get_otp_service() -> OTPService:
 async def get_user_service(db: AsyncSession = Depends(get_db)) -> UserInfoService:
     repo = UserInfoRepository(db)
     return UserInfoService(repo)
+
+
+async def get_medicine_repo(db: AsyncSession = Depends(get_db)) -> MedicineRepository:
+    return MedicineRepository(db)
+
+
+async def get_medicine_service(db: AsyncSession = Depends(get_db)) -> MedicineService:
+    repo = await get_medicine_repo(db)
+    return MedicineService(repo)
 
 
 async def get_user_repo(db: AsyncSession = Depends(get_db)) -> UserRepository:
@@ -51,6 +63,8 @@ async def get_user_id(request: Request):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Unauthorized"
             )
+
+        current_user_id.set(user_id)
 
         logger.debug(f"Authenticated request for user_id: {user_id}")
         return user_id

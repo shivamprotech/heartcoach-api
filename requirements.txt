@@ -102,3 +102,4 @@ pyotp
 matplotlib
 pillow
 pandas
+sqlalchemy-continuum
